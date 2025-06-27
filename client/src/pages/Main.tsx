@@ -1,23 +1,83 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { surahs } from "../data/surahs"
-
 
 export default function Main() {
   const [selectedSure, setSelectedSure] = useState(surahs[0])
   const [selectedAyet, setSelectedAyet] = useState(1)
+  const [ayetMetni, setAyetMetni] = useState("")
 
   const imageSrc = `/img/${selectedSure.no}_${selectedAyet}.png`
+
+  // 🔸 Klavye ile yönlendirme
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") {
+        // → Ayet ileri
+        setSelectedAyet((prev) =>
+          prev < selectedSure.ayetSayisi ? prev + 1 : prev
+        )
+      } else if (e.key === "ArrowLeft") {
+        // ← Ayet geri
+        setSelectedAyet((prev) => (prev > 1 ? prev - 1 : prev))
+      } else if (e.key === "ArrowDown") {
+        // ↓ Sonraki sure
+        const currentIndex = surahs.findIndex((s) => s.no === selectedSure.no)
+        if (currentIndex < surahs.length - 1) {
+          const nextSure = surahs[currentIndex + 1]
+          setSelectedSure(nextSure)
+          setSelectedAyet(1)
+        }
+      } else if (e.key === "ArrowUp") {
+        // ↑ Önceki sure
+        const currentIndex = surahs.findIndex((s) => s.no === selectedSure.no)
+        if (currentIndex > 0) {
+          const prevSure = surahs[currentIndex - 1]
+          setSelectedSure(prevSure)
+          setSelectedAyet(1)
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleKey)
+    return () => window.removeEventListener("keydown", handleKey)
+  }, [selectedSure])
+
+  // 🔸 Metin yükleme
+  useEffect(() => {
+    fetch("/quran-simple-plain.txt")
+      .then((res) => res.text())
+      .then((text) => {
+        const satirlar = text
+          .split("\n")
+          .map((s) => s.trim().replace(/^\uFEFF/, ""))
+
+        const hedef = satirlar.find((satir) => {
+          const [sureNo, ayetNo] = satir.split("|")
+          return (
+            Number(sureNo) === selectedSure.no &&
+            Number(ayetNo) === selectedAyet
+          )
+        })
+
+        if (hedef) {
+          const [, , metin] = hedef.split("|")
+          setAyetMetni(metin)
+        } else {
+          setAyetMetni("")
+        }
+      })
+      .catch(() => setAyetMetni(""))
+  }, [selectedSure, selectedAyet])
 
   return (
     <div className="max-w-4xl mx-auto px-4 mt-6">
       {/* Dropdownlar */}
       <div className="flex flex-col sm:flex-row justify-center gap-4 mb-6">
-        {/* Sure Dropdown */}
         <select
           className="w-full sm:w-1/2 border rounded px-3 py-2"
           value={selectedSure.ad}
           onChange={(e) => {
-            const yeniSure = surahs.find(s => s.ad === e.target.value)!
+            const yeniSure = surahs.find((s) => s.ad === e.target.value)!
             setSelectedSure(yeniSure)
             setSelectedAyet(1)
           }}
@@ -29,7 +89,6 @@ export default function Main() {
           ))}
         </select>
 
-        {/* Ayet Dropdown */}
         <select
           className="w-full sm:w-1/2 border rounded px-3 py-2"
           value={selectedAyet}
@@ -43,7 +102,7 @@ export default function Main() {
         </select>
       </div>
 
-      {/* Ayet Görseli */}
+      {/* Görsel */}
       <div className="flex justify-center">
         <img
           src={imageSrc}
@@ -52,6 +111,20 @@ export default function Main() {
           onError={(e) => (e.currentTarget.src = "/img/not-found.png")}
         />
       </div>
+
+      {/* Ayet kelimeleri */}
+      {ayetMetni && (
+        <div className="mt-6 text-center text-3xl font-serif leading-loose space-y-3">
+          {ayetMetni.split(" ").map((kelime, i) => (
+            <div
+              key={i}
+              className="relative pb-2 after:content-[''] after:block after:h-[1px] after:bg-black after:opacity-30 after:mx-auto after:mt-2 after:w-1/2"
+            >
+              {kelime}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
