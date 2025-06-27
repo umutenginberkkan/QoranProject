@@ -7,40 +7,75 @@ export default function Main() {
   const [ayetMetni, setAyetMetni] = useState("")
 
   const imageSrc = `/img/${selectedSure.no}_${selectedAyet}.png`
-
+  let touchStartX = 0
   // 🔸 Klavye ile yönlendirme
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight") {
-        // → Ayet ileri
+ useEffect(() => {
+  let touchStartX = 0
+  let isPinching = false
+
+  const handleTouchStart = (e: TouchEvent) => {
+    if (e.touches.length > 1) {
+      isPinching = true
+      return
+    }
+    isPinching = false
+    touchStartX = e.touches[0].clientX
+  }
+
+  const handleTouchEnd = (e: TouchEvent) => {
+    if (isPinching || e.changedTouches.length > 1) return
+
+    const touchEndX = e.changedTouches[0].clientX
+    const deltaX = touchEndX - touchStartX
+
+    if (Math.abs(deltaX) > 30) {
+      if (deltaX > 0) {
+        // 👉 sağa kaydır — önceki ayet
+        setSelectedAyet((prev) => (prev > 1 ? prev - 1 : prev))
+      } else {
+        // 👈 sola kaydır — sonraki ayet
         setSelectedAyet((prev) =>
           prev < selectedSure.ayetSayisi ? prev + 1 : prev
         )
-      } else if (e.key === "ArrowLeft") {
-        // ← Ayet geri
-        setSelectedAyet((prev) => (prev > 1 ? prev - 1 : prev))
-      } else if (e.key === "ArrowDown") {
-        // ↓ Sonraki sure
-        const currentIndex = surahs.findIndex((s) => s.no === selectedSure.no)
-        if (currentIndex < surahs.length - 1) {
-          const nextSure = surahs[currentIndex + 1]
-          setSelectedSure(nextSure)
-          setSelectedAyet(1)
-        }
-      } else if (e.key === "ArrowUp") {
-        // ↑ Önceki sure
-        const currentIndex = surahs.findIndex((s) => s.no === selectedSure.no)
-        if (currentIndex > 0) {
-          const prevSure = surahs[currentIndex - 1]
-          setSelectedSure(prevSure)
-          setSelectedAyet(1)
-        }
       }
     }
+  }
 
-    window.addEventListener("keydown", handleKey)
-    return () => window.removeEventListener("keydown", handleKey)
-  }, [selectedSure])
+  const handleKey = (e: KeyboardEvent) => {
+    if (e.key === "ArrowRight") {
+      // → sonraki ayet
+      setSelectedAyet((prev) =>
+        prev < selectedSure.ayetSayisi ? prev + 1 : prev
+      )
+    } else if (e.key === "ArrowLeft") {
+      // ← önceki ayet
+      setSelectedAyet((prev) => (prev > 1 ? prev - 1 : prev))
+    } else if (e.key === "ArrowDown") {
+      const currentIndex = surahs.findIndex((s) => s.no === selectedSure.no)
+      if (currentIndex < surahs.length - 1) {
+        setSelectedSure(surahs[currentIndex + 1])
+        setSelectedAyet(1)
+      }
+    } else if (e.key === "ArrowUp") {
+      const currentIndex = surahs.findIndex((s) => s.no === selectedSure.no)
+      if (currentIndex > 0) {
+        setSelectedSure(surahs[currentIndex - 1])
+        setSelectedAyet(1)
+      }
+    }
+  }
+
+  window.addEventListener("touchstart", handleTouchStart)
+  window.addEventListener("touchend", handleTouchEnd)
+  window.addEventListener("keydown", handleKey)
+
+  return () => {
+    window.removeEventListener("touchstart", handleTouchStart)
+    window.removeEventListener("touchend", handleTouchEnd)
+    window.removeEventListener("keydown", handleKey)
+  }
+}, [selectedSure])
+
 
   // 🔸 Metin yükleme
   useEffect(() => {
