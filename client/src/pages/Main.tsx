@@ -1,13 +1,9 @@
 import { useState } from "react"
+import { surahs } from "../data/surahs"
 
-const sureler = [
-  { ad: "Fatiha", no: 1, ayetSayisi: 7 },
-  { ad: "Bakara", no: 2, ayetSayisi: 286 },
-  { ad: "Yasin", no: 36, ayetSayisi: 83 },
-]
 
 export default function Main() {
-  const [selectedSure, setSelectedSure] = useState(sureler[0])
+  const [selectedSure, setSelectedSure] = useState(surahs[0])
   const [selectedAyet, setSelectedAyet] = useState(1)
 
   const imageSrc = `/img/${selectedSure.no}_${selectedAyet}.png`
@@ -21,12 +17,12 @@ export default function Main() {
           className="w-full sm:w-1/2 border rounded px-3 py-2"
           value={selectedSure.ad}
           onChange={(e) => {
-            const yeniSure = sureler.find(s => s.ad === e.target.value)!
+            const yeniSure = surahs.find(s => s.ad === e.target.value)!
             setSelectedSure(yeniSure)
             setSelectedAyet(1)
           }}
         >
-          {sureler.map((sure) => (
+          {surahs.map((sure) => (
             <option key={sure.no} value={sure.ad}>
               {sure.ad}
             </option>
