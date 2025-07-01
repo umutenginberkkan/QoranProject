@@ -4,6 +4,15 @@ export default function Settings() {
   const [tema, setTema] = useState("light")
   const [fontSize, setFontSize] = useState("normal")
   const [bildirimler, setBildirimler] = useState(true)
+  const [resetMessage, setResetMessage] = useState("")
+
+  const handleReset = () => {
+    localStorage.removeItem("readVerses")
+    localStorage.removeItem("lastSelectedSureNo")
+    localStorage.removeItem("lastSelectedAyet")
+    setResetMessage("Okuma geçmişi sıfırlandı.")
+    setTimeout(() => setResetMessage(""), 3000)
+  }
 
   return (
     <div className="max-w-xl mx-auto mt-6 px-4">
@@ -45,16 +54,32 @@ export default function Settings() {
           id="bildirimler"
           className="mr-2"
         />
-        <label htmlFor="bildirimler" className="font-medium">Okuma hatırlatmalarını al</label>
+        <label htmlFor="bildirimler" className="font-medium">
+          Okuma hatırlatmalarını al
+        </label>
       </div>
 
-      {/* Kaydet Butonu */}
-      <button
-        onClick={() => alert("Ayarlar kaydedildi (örnek).")}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      >
-        Kaydet
-      </button>
+      {/* Butonlar */}
+      <div className="flex gap-4">
+        <button
+          onClick={() => alert("Ayarlar kaydedildi (örnek).")}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Kaydet
+        </button>
+
+        <button
+          onClick={handleReset}
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+        >
+          Okuma Geçmişini Sıfırla
+        </button>
+      </div>
+
+      {/* Bilgi mesajı */}
+      {resetMessage && (
+        <p className="text-green-600 mt-4 font-medium">{resetMessage}</p>
+      )}
     </div>
   )
 }

@@ -1,36 +1,107 @@
-export default function Statistics() {
-  const exampleStats = [
-    { tarih: '2025-06-24', sayfa: 441, sure: 'Yasin', süre: '5 dk' },
-    { tarih: '2025-06-23', sayfa: 1, sure: 'Fatiha', süre: '1 dk' },
-    { tarih: '2025-06-22', sayfa: 255, sure: 'Bakara', süre: '10 dk' },
-  ]
+import { useEffect, useState } from "react"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts"
+import { surahs } from "../data/surahs"
+
+type ChartItem = { name: string; ayet: number }
+type DetailItem = { sure: string; ranges: string[] }
+
+export default function StatisticsPage() {
+  const [chartData, setChartData] = useState<ChartItem[]>([])
+  const [details, setDetails] = useState<DetailItem[]>([])
+
+  useEffect(() => {
+    const raw = JSON.parse(localStorage.getItem("readVerses") || "{}")
+    const sureGroups: Record<number, number[]> = {}
+
+    // Yeni yapıya uygun okuma
+    for (const sureNoStr in raw) {
+      const sureNo = parseInt(sureNoStr)
+      const ayetList = raw[sureNoStr] as number[]
+      if (!Array.isArray(ayetList)) continue
+
+      sureGroups[sureNo] = ayetList
+    }
+
+    const chart: ChartItem[] = []
+    const detail: DetailItem[] = []
+
+    Object.entries(sureGroups).forEach(([sureNoStr, ayetList]) => {
+      const sureNo = parseInt(sureNoStr)
+      const sure = surahs.find((s) => s.no === sureNo)
+      if (!sure) return
+
+      const sorted = [...ayetList].sort((a, b) => a - b)
+      const ranges: string[] = []
+
+      let start = sorted[0]
+      let prev = sorted[0]
+
+      for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i] === prev + 1) {
+          prev = sorted[i]
+        } else {
+          ranges.push(start === prev ? `${start}` : `${start}-${prev}`)
+          start = sorted[i]
+          prev = sorted[i]
+        }
+      }
+      ranges.push(start === prev ? `${start}` : `${start}-${prev}`)
+
+      chart.push({ name: sure.ad, ayet: sorted.length })
+      detail.push({ sure: sure.ad, ranges })
+    })
+
+    setChartData(chart)
+    setDetails(detail)
+  }, [])
 
   return (
-    <div className="max-w-3xl mx-auto mt-6">
-      <h1 className="text-2xl font-bold text-blue-600 mb-4">İstatistikler</h1>
+    <div className="max-w-5xl mx-auto mt-10 px-4">
+      <h1 className="text-2xl font-bold mb-6">Okuma İstatistikleri</h1>
 
-      <table className="w-full text-sm text-left border-collapse border">
-        <thead className="bg-blue-100 text-blue-800">
-          <tr>
-            <th className="border px-4 py-2">Tarih</th>
-            <th className="border px-4 py-2">Sayfa</th>
-            <th className="border px-4 py-2">Sure</th>
-            <th className="border px-4 py-2">Okuma Süresi</th>
-          </tr>
-        </thead>
-        <tbody>
-          {exampleStats.map((item, idx) => (
-            <tr key={idx} className="hover:bg-gray-50">
-              <td className="border px-4 py-2">{item.tarih}</td>
-              <td className="border px-4 py-2">{item.sayfa}</td>
-              <td className="border px-4 py-2">{item.sure}</td>
-              <td className="border px-4 py-2">{item.süre}</td>
-            </tr>
+      {/* Grafik */}
+      <div className="h-96">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={chartData}
+            margin={{ top: 10, right: 20, bottom: 50, left: 0 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              dataKey="name"
+              angle={-45}
+              textAnchor="end"
+              interval={0}
+              height={80}
+            />
+            <YAxis allowDecimals={false} />
+            <Tooltip />
+            <Bar dataKey="ayet" fill="#38bdf8" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Detaylı aralıklar */}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold mb-4">
+          Detaylı Okuma Aralıkları
+        </h2>
+        <ul className="space-y-2">
+          {details.map((item) => (
+            <li key={item.sure} className="border p-3 rounded shadow">
+              <strong>{item.sure}</strong>: {item.ranges.join(", ")}
+            </li>
           ))}
-        </tbody>
-      </table>
-
-      <p className="text-sm text-gray-500 mt-4">Veriler örnek amaçlıdır. Gerçek kullanıcı verileri ileride burada gösterilecektir.</p>
+        </ul>
+      </div>
     </div>
   )
 }
