@@ -20,67 +20,74 @@ export default function Main() {
 
   // 🔸 Touch ve Klavye Navigasyonu
   useEffect(() => {
-    let touchStartX = 0
-    let isPinching = false
+  let touchStartX = 0
+  let touchStartY = 0
+  let isPinching = false
 
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length > 1) {
-        isPinching = true
-        return
-      }
-      isPinching = false
-      touchStartX = e.touches[0].clientX
+  const handleTouchStart = (e: TouchEvent) => {
+    if (e.touches.length > 1) {
+      isPinching = true
+      return
     }
+    isPinching = false
+    touchStartX = e.touches[0].clientX
+    touchStartY = e.touches[0].clientY
+  }
 
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (isPinching || e.changedTouches.length > 1) return
+  const handleTouchEnd = (e: TouchEvent) => {
+    if (isPinching || e.changedTouches.length > 1) return
 
-      const touchEndX = e.changedTouches[0].clientX
-      const deltaX = touchEndX - touchStartX
+    const touchEndX = e.changedTouches[0].clientX
+    const touchEndY = e.changedTouches[0].clientY
 
-      if (Math.abs(deltaX) > 30) {
-        if (deltaX > 0) {
-          setSelectedAyet((prev) => (prev > 1 ? prev - 1 : prev))
-        } else {
-          setSelectedAyet((prev) =>
-            prev < selectedSure.ayetSayisi ? prev + 1 : prev
-          )
-        }
-      }
-    }
+    const deltaX = touchEndX - touchStartX
+    const deltaY = touchEndY - touchStartY
 
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight") {
+    // 🔸 Yalnızca yatay swipe'larda (sağ/sol) çalışsın
+    if (Math.abs(deltaX) > 30 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (deltaX > 0) {
+        setSelectedAyet((prev) => (prev > 1 ? prev - 1 : prev))
+      } else {
         setSelectedAyet((prev) =>
           prev < selectedSure.ayetSayisi ? prev + 1 : prev
         )
-      } else if (e.key === "ArrowLeft") {
-        setSelectedAyet((prev) => (prev > 1 ? prev - 1 : prev))
-      } else if (e.key === "ArrowDown") {
-        const i = surahs.findIndex((s) => s.no === selectedSure.no)
-        if (i < surahs.length - 1) {
-          setSelectedSure(surahs[i + 1])
-          setSelectedAyet(1)
-        }
-      } else if (e.key === "ArrowUp") {
-        const i = surahs.findIndex((s) => s.no === selectedSure.no)
-        if (i > 0) {
-          setSelectedSure(surahs[i - 1])
-          setSelectedAyet(1)
-        }
       }
     }
+  }
 
-    window.addEventListener("touchstart", handleTouchStart)
-    window.addEventListener("touchend", handleTouchEnd)
-    window.addEventListener("keydown", handleKey)
-
-    return () => {
-      window.removeEventListener("touchstart", handleTouchStart)
-      window.removeEventListener("touchend", handleTouchEnd)
-      window.removeEventListener("keydown", handleKey)
+  const handleKey = (e: KeyboardEvent) => {
+    if (e.key === "ArrowRight") {
+      setSelectedAyet((prev) =>
+        prev < selectedSure.ayetSayisi ? prev + 1 : prev
+      )
+    } else if (e.key === "ArrowLeft") {
+      setSelectedAyet((prev) => (prev > 1 ? prev - 1 : prev))
+    } else if (e.key === "ArrowDown") {
+      const i = surahs.findIndex((s) => s.no === selectedSure.no)
+      if (i < surahs.length - 1) {
+        setSelectedSure(surahs[i + 1])
+        setSelectedAyet(1)
+      }
+    } else if (e.key === "ArrowUp") {
+      const i = surahs.findIndex((s) => s.no === selectedSure.no)
+      if (i > 0) {
+        setSelectedSure(surahs[i - 1])
+        setSelectedAyet(1)
+      }
     }
-  }, [selectedSure])
+  }
+
+  window.addEventListener("touchstart", handleTouchStart)
+  window.addEventListener("touchend", handleTouchEnd)
+  window.addEventListener("keydown", handleKey)
+
+  return () => {
+    window.removeEventListener("touchstart", handleTouchStart)
+    window.removeEventListener("touchend", handleTouchEnd)
+    window.removeEventListener("keydown", handleKey)
+  }
+}, [selectedSure])
+
 
   // 🔸 Ayet metni + okuma durumu kontrolü
   useEffect(() => {

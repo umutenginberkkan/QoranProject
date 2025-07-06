@@ -77,7 +77,7 @@ export default function Header() {
   }
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-red-600 text-white z-50 shadow-md">
+    <header className="fixed top-0 left-0 w-full bg-red-800 text-white z-50 shadow-md">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Sol: Navigasyon */}
         <div>

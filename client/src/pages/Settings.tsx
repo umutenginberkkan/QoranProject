@@ -1,10 +1,45 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function Settings() {
-  const [tema, setTema] = useState("light")
-  const [fontSize, setFontSize] = useState("normal")
-  const [bildirimler, setBildirimler] = useState(true)
+  const user = null // Giriş yapılmışsa burada kullanıcı objesi olur
+
+  const [tema, setTema] = useState(() => {
+    const saved = localStorage.getItem("appSettings")
+    return saved ? JSON.parse(saved).tema || "light" : "light"
+  })
+
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = localStorage.getItem("appSettings")
+    return saved ? JSON.parse(saved).fontSize || "normal" : "normal"
+  })
+
+  const [bildirimler, setBildirimler] = useState(() => {
+    const saved = localStorage.getItem("appSettings")
+    return saved ? JSON.parse(saved).bildirimler ?? true : true
+  })
+
+  const [istatistikTuru, setIstatistikTuru] = useState<"ayet" | "harf">(() => {
+    const saved = localStorage.getItem("appSettings")
+    return saved ? JSON.parse(saved).istatistikTuru || "ayet" : "ayet"
+  })
+
   const [resetMessage, setResetMessage] = useState("")
+  const [saveMessage, setSaveMessage] = useState("")
+
+  // 🔄 Ayarlar her değiştiğinde kaydedilir
+  useEffect(() => {
+    const settings = { tema, fontSize, bildirimler, istatistikTuru }
+    localStorage.setItem("appSettings", JSON.stringify(settings))
+
+    if (user) {
+      // Giriş yapılmışsa API ile veritabanına kaydedilebilir
+      // fetch(`/api/users/${user.id}/settings`, {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify(settings),
+      // })
+    }
+  }, [tema, fontSize, bildirimler, istatistikTuru])
 
   const handleReset = () => {
     localStorage.removeItem("readVerses")
@@ -12,6 +47,11 @@ export default function Settings() {
     localStorage.removeItem("lastSelectedAyet")
     setResetMessage("Okuma geçmişi sıfırlandı.")
     setTimeout(() => setResetMessage(""), 3000)
+  }
+
+  const handleSaveClick = () => {
+    setSaveMessage("Ayarlar kaydedildi.")
+    setTimeout(() => setSaveMessage(""), 3000)
   }
 
   return (
@@ -59,13 +99,28 @@ export default function Settings() {
         </label>
       </div>
 
+      {/* İstatistik Hesaplama Türü */}
+      <div className="mb-4">
+        <label className="block mb-1 font-medium">İstatistik Türü</label>
+        <select
+          value={istatistikTuru}
+          onChange={(e) =>
+            setIstatistikTuru(e.target.value as "ayet" | "harf")
+          }
+          className="w-full border rounded px-3 py-2"
+        >
+          <option value="ayet">Ayet Sayısı</option>
+          <option value="harf">Harf Sayısı</option>
+        </select>
+      </div>
+
       {/* Butonlar */}
       <div className="flex gap-4">
         <button
-          onClick={() => alert("Ayarlar kaydedildi (örnek).")}
+          onClick={handleSaveClick}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          Kaydet
+          Ayarları Kaydet
         </button>
 
         <button
@@ -76,9 +131,12 @@ export default function Settings() {
         </button>
       </div>
 
-      {/* Bilgi mesajı */}
+      {/* Mesajlar */}
       {resetMessage && (
         <p className="text-green-600 mt-4 font-medium">{resetMessage}</p>
+      )}
+      {saveMessage && (
+        <p className="text-blue-600 mt-4 font-medium">{saveMessage}</p>
       )}
     </div>
   )
